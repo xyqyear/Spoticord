@@ -45,7 +45,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.channel.id == 815076312611291196:
+    if message.channel.id == config['channel_id']:
         if message.content == '!debug':
             debug_message = f'lock={lock}, last_playing_name={last_playing_name}'
             print(debug_message)
