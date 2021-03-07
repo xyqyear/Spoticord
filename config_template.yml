@@ -1,3 +1,4 @@
 spotify_client_id: 'your id'
 spotify_client_secret: 'your secret'
 discord_bot_token: 'your discord bot token'
+channel_id: 12345

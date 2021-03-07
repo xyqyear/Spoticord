@@ -2,6 +2,8 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from aio_util import to_async
 
+from requests.exceptions import ReadTimeout
+
 
 def get_spotify(config: dict) -> spotipy.Spotify:
     return spotipy.Spotify(auth_manager=SpotifyOAuth(scope='user-read-playback-state',
@@ -14,18 +16,28 @@ def get_spotify(config: dict) -> spotipy.Spotify:
 
 @to_async
 def get_now_playing_info(spotify: spotipy.Spotify):
-    raw_playing_data = spotify.currently_playing()
-    if raw_playing_data:
-        if raw_playing_data['currently_playing_type'] == 'episode':
+    try:
+        raw_playing_data = spotify.currently_playing()
+    except ReadTimeout:
+        return ''
+    if raw_playing_data and 'currently_playing_type' in raw_playing_data:
+        if raw_playing_data['currently_playing_type'] == 'unknown':
+            return None
+        elif raw_playing_data['currently_playing_type'] == 'ad':
+            return None
+        elif raw_playing_data['currently_playing_type'] == 'episode':
             raw_playing_data = spotify.currently_playing(additional_types='episode')
+
     return raw_playing_data
 
 
-def get_playing_name(raw_playing_data: dict):
+def parse_playing_name(raw_playing_data: dict):
     if raw_playing_data['currently_playing_type'] == 'track':
         return f'{raw_playing_data["item"]["name"]} - {", ".join(i["name"] for i in raw_playing_data["item"]["artists"])}'
-    else:
+    elif raw_playing_data['currently_playing_type'] == 'episode':
         return f'{raw_playing_data["item"]["name"]} - {raw_playing_data["item"]["show"]["name"]}'
+    else:
+        return None
 
 
 def get_playing_url(raw_playing_data: dict):
